@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encontrar pets - PetLar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="container" style="padding-top:32px;">
+  <div class="panel-header">
+    <div>
+      <h1 class="section-title" style="margin-bottom:4px;">Encontre seu novo melhor amigo</h1>
+      <p class="section-subtitle" style="margin-bottom:0;" id="results-count">Carregando pets...</p>
+    </div>
+  </div>
+
+  <form class="filters-bar" id="filters-form">
+    <div class="filter-group">
+      <label>Buscar</label>
+      <input type="text" name="busca" class="form-control" placeholder="Nome, raça, cidade...">
+    </div>
+    <div class="filter-group">
+      <label>Espécie</label>
+      <select name="species" class="form-control">
+        <option value="">Todas</option>
+        <option value="cachorro">Cachorro</option>
+        <option value="gato">Gato</option>
+        <option value="outros">Outro</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Sexo</label>
+      <select name="sex" class="form-control">
+        <option value="">Todos</option>
+        <option value="macho">Macho</option>
+        <option value="femea">Fêmea</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Idade</label>
+      <select name="age" class="form-control">
+        <option value="">Todas</option>
+        <option value="filhote">Filhote</option>
+        <option value="jovem">Jovem</option>
+        <option value="adulto">Adulto</option>
+        <option value="idoso">Idoso</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Porte</label>
+      <select name="size" class="form-control">
+        <option value="">Todos</option>
+        <option value="pequeno">Pequeno</option>
+        <option value="medio">Médio</option>
+        <option value="grande">Grande</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Raça</label>
+      <input type="text" name="breed" class="form-control" placeholder="Ex: SRD, Labrador...">
+    </div>
+    <div class="filter-group">
+      <label>Cidade</label>
+      <input type="text" name="city" class="form-control" placeholder="Cidade">
+    </div>
+    <div class="filter-group">
+      <label>Estado</label>
+      <select name="state" class="form-control" id="state-select">
+        <option value="">Todos</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Anunciante</label>
+      <select name="hasOng" class="form-control">
+        <option value="">Todos</option>
+        <option value="com">Com ONG</option>
+        <option value="sem">Pessoa física</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <select name="status" class="form-control">
+        <option value="">Disponíveis e adotados</option>
+        <option value="disponivel" selected>Somente disponíveis</option>
+        <option value="adotado">Somente adotados</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+    <button type="button" id="clear-filters" class="btn btn-ghost">Limpar</button>
+  </form>
+
+  <div class="pets-grid" id="pets-grid">
+    <div class="loading-spinner"><div class="spinner"></div></div>
+  </div>
+
+  <div class="load-more-wrap" id="load-more-wrap" style="display:none;">
+    <button class="btn btn-outline" id="load-more-btn">Carregar mais pets</button>
+  </div>
+</div>
+
+<footer class="site-footer" id="site-footer" style="margin-top:60px;"></footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/header.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/pets.js"></script>
+<script>
+  initLayout('pets');
+
+  const stateSelect = document.getElementById('state-select');
+  ESTADOS_BR.forEach(uf => stateSelect.innerHTML += `<option value="${uf}">${uf}</option>`);
+
+  let TODOS_PETS = [];
+  let RESULTADOS_FILTRADOS = [];
+  let PAGINA_ATUAL = 1;
+  const POR_PAGINA = 8;
+
+  function lerFiltrosForm(){
+    const form = document.getElementById('filters-form');
+    const data = new FormData(form);
+    const filtros = {};
+    for(const [key, value] of data.entries()){
+      if(value) filtros[key] = value;
+    }
+    return filtros;
+  }
+
+  function renderizarResultados(){
+    const grid = document.getElementById('pets-grid');
+    const countEl = document.getElementById('results-count');
+    countEl.textContent = `${RESULTADOS_FILTRADOS.length} pet(s) encontrado(s)`;
+
+    if(RESULTADOS_FILTRADOS.length === 0){
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🔍</div><h3>Nenhum pet encontrado com esses filtros</h3><p>Tente ajustar ou limpar os filtros de busca.</p></div>`;
+      document.getElementById('load-more-wrap').style.display = 'none';
+      return;
+    }
+
+    const visiveis = RESULTADOS_FILTRADOS.slice(0, PAGINA_ATUAL * POR_PAGINA);
+    grid.innerHTML = visiveis.map(petCardHTML).join('');
+    atualizarBotoesFavorito();
+
+    document.getElementById('load-more-wrap').style.display =
+      visiveis.length < RESULTADOS_FILTRADOS.length ? 'block' : 'none';
+  }
+
+  async function carregarTudo(){
+    try{
+      TODOS_PETS = await buscarPets({ incluirAdotados: true });
+      aplicarBuscaEFiltrar();
+    }catch(err){
+      console.error(err);
+      document.getElementById('pets-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><h3>Erro ao carregar pets</h3><p>${traduzirErroFirebase(err)}</p></div>`;
+    }
+  }
+
+  function aplicarBuscaEFiltrar(){
+    const filtros = lerFiltrosForm();
+    RESULTADOS_FILTRADOS = aplicarFiltrosPets(TODOS_PETS, filtros);
+    PAGINA_ATUAL = 1;
+    renderizarResultados();
+  }
+
+  document.getElementById('filters-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    aplicarBuscaEFiltrar();
+  });
+
+  document.getElementById('clear-filters').addEventListener('click', () => {
+    document.getElementById('filters-form').reset();
+    aplicarBuscaEFiltrar();
+  });
+
+  document.getElementById('load-more-btn').addEventListener('click', () => {
+    PAGINA_ATUAL++;
+    renderizarResultados();
+  });
+
+  // Preenche busca vinda pela URL (?busca=xxx)
+  const buscaUrl = getParam('busca');
+  if(buscaUrl){
+    document.querySelector('[name="busca"]').value = buscaUrl;
+  }
+
+  carregarTudo();
+</script>
+</body>
+</html>

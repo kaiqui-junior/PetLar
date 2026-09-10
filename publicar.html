@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Publicar pet - PetLar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="container">
+  <div class="form-card wide">
+    <h2 id="form-title">Publicar pet para adoção 🐾</h2>
+    <p class="form-subtitle">Preencha os dados com atenção. Anúncios completos recebem mais interesse!</p>
+
+    <form id="pet-form">
+      <input type="hidden" name="petId" value="">
+
+      <div class="form-group">
+        <label>Deseja publicar como:</label>
+        <div class="radio-group">
+          <label class="radio-option"><input type="radio" name="publishAs" value="pessoa" checked> Pessoa física</label>
+          <label class="radio-option"><input type="radio" name="publishAs" value="ong"> Minha ONG</label>
+        </div>
+        <span class="hint" id="ong-hint">Você ainda não possui uma ONG vinculada. <a href="cadastrar-ong.html">Cadastre uma ONG</a> para publicar em nome dela.</span>
+      </div>
+
+      <hr class="form-divider">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome do pet *</label>
+          <input type="text" name="name" class="form-control" required placeholder="Ex: Rex">
+        </div>
+        <div class="form-group">
+          <label>Espécie *</label>
+          <select name="species" class="form-control" required>
+            <option value="">Selecione</option>
+            <option value="cachorro">Cachorro</option>
+            <option value="gato">Gato</option>
+            <option value="outros">Outro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Raça *</label>
+          <input type="text" name="breed" class="form-control" required placeholder="Ex: SRD (Sem Raça Definida)">
+        </div>
+        <div class="form-group">
+          <label>Sexo *</label>
+          <select name="sex" class="form-control" required>
+            <option value="">Selecione</option>
+            <option value="macho">Macho</option>
+            <option value="femea">Fêmea</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Idade *</label>
+          <select name="age" class="form-control" required>
+            <option value="">Selecione</option>
+            <option value="filhote">Filhote</option>
+            <option value="jovem">Jovem</option>
+            <option value="adulto">Adulto</option>
+            <option value="idoso">Idoso</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Porte *</label>
+          <select name="size" class="form-control" required>
+            <option value="">Selecione</option>
+            <option value="pequeno">Pequeno</option>
+            <option value="medio">Médio</option>
+            <option value="grande">Grande</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cidade *</label>
+          <input type="text" name="city" class="form-control" required placeholder="Cidade onde o pet está">
+        </div>
+        <div class="form-group">
+          <label>Estado *</label>
+          <select name="state" class="form-control" id="state-select-publicar" required></select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Descrição *</label>
+        <textarea name="description" class="form-control" rows="3" required placeholder="Personalidade, comportamento, do que gosta..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>História do animal</label>
+        <textarea name="story" class="form-control" rows="3" placeholder="Como o pet chegou até você, resgate, etc. (opcional)"></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="checkbox-row">
+          <input type="checkbox" name="vaccinated" id="vaccinated">
+          <label for="vaccinated" style="margin:0;">Vacinado</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" name="neutered" id="neutered">
+          <label for="neutered" style="margin:0;">Castrado</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Necessidades especiais <span class="hint" style="display:inline;">(opcional)</span></label>
+        <input type="text" name="specialNeeds" class="form-control" placeholder="Ex: cego de um olho, toma medicação contínua...">
+      </div>
+
+      <div class="form-group">
+        <label>Forma de contato *</label>
+        <input type="text" name="contactMethod" class="form-control" required placeholder="Ex: WhatsApp (00) 00000-0000 ou e-mail">
+        <span class="hint">Esta informação será mostrada apenas para usuários logados na página de detalhes.</span>
+      </div>
+
+      <hr class="form-divider">
+
+      <div class="form-group">
+        <label>Fotos do pet * <span class="hint" style="display:inline;">(selecione uma ou mais imagens)</span></label>
+        <div class="image-upload-box" id="upload-box">
+          📷 Clique aqui ou arraste as fotos do pet
+          <input type="file" id="image-input" accept="image/*" multiple style="display:none;">
+        </div>
+        <div class="image-preview-grid" id="preview-grid"></div>
+        <span class="hint">Clique em uma foto para defini-la como imagem principal do anúncio.</span>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" id="submit-btn" style="margin-top:12px;">Publicar pet</button>
+    </form>
+  </div>
+</div>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/header.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  initLayout('publicar');
+
+  const stateSelect = document.getElementById('state-select-publicar');
+  stateSelect.innerHTML = '<option value="">Selecione</option>' + ESTADOS_BR.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+
+  let USUARIO_LOGADO = null;
+  let USUARIO_DADOS = null;
+  let ARQUIVOS_SELECIONADOS = []; // { file, url, isMain }
+  let IMAGENS_EXISTENTES = [];    // usadas ao editar um anúncio
+  let INDICE_IMAGEM_PRINCIPAL = 0;
+  const editId = getParam('id');
+
+  exigirLogin(async (user) => {
+    USUARIO_LOGADO = user;
+    USUARIO_DADOS = await getUserData(user.uid);
+
+    if(USUARIO_DADOS && USUARIO_DADOS.ongId){
+      document.getElementById('ong-hint').textContent = 'Você tem uma ONG vinculada ao seu perfil. Selecione "Minha ONG" para publicar em nome dela.';
+    }
+
+    if(editId){
+      carregarPetParaEdicao(editId);
+    }
+  });
+
+  async function carregarPetParaEdicao(id){
+    document.getElementById('form-title').textContent = 'Editar anúncio 🐾';
+    document.getElementById('submit-btn').textContent = 'Salvar alterações';
+    const doc = await db.collection('pets').doc(id).get();
+    if(!doc.exists){ showToast('Anúncio não encontrado.', 'error'); return; }
+    const pet = doc.data();
+
+    if(pet.ownerId !== USUARIO_LOGADO.uid){
+      showToast('Você não tem permissão para editar este anúncio.', 'error');
+      setTimeout(() => window.location.href = 'meus-anuncios.html', 1200);
+      return;
+    }
+
+    const form = document.getElementById('pet-form');
+    form.petId.value = id;
+    form.name.value = pet.name;
+    form.species.value = pet.species;
+    form.breed.value = pet.breed;
+    form.sex.value = pet.sex;
+    form.age.value = pet.age;
+    form.size.value = pet.size;
+    form.city.value = pet.city;
+    form.state.value = pet.state;
+    form.description.value = pet.description;
+    form.story.value = pet.story || '';
+    form.vaccinated.checked = !!pet.vaccinated;
+    form.neutered.checked = !!pet.neutered;
+    form.specialNeeds.value = pet.specialNeeds || '';
+    form.contactMethod.value = pet.contactMethod || '';
+    form.publishAs.value = pet.ongId ? 'ong' : 'pessoa';
+
+    IMAGENS_EXISTENTES = pet.images || [];
+    INDICE_IMAGEM_PRINCIPAL = IMAGENS_EXISTENTES.indexOf(pet.mainImage);
+    if(INDICE_IMAGEM_PRINCIPAL < 0) INDICE_IMAGEM_PRINCIPAL = 0;
+    renderizarPreviews();
+  }
+
+  // ---------- Upload de imagens ----------
+  const uploadBox = document.getElementById('upload-box');
+  const imageInput = document.getElementById('image-input');
+  uploadBox.addEventListener('click', () => imageInput.click());
+  uploadBox.addEventListener('dragover', (e) => { e.preventDefault(); uploadBox.style.borderColor = 'var(--color-primary)'; });
+  uploadBox.addEventListener('dragleave', () => { uploadBox.style.borderColor = ''; });
+  uploadBox.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadBox.style.borderColor = '';
+    adicionarArquivos(e.dataTransfer.files);
+  });
+  imageInput.addEventListener('change', (e) => adicionarArquivos(e.target.files));
+
+  function adicionarArquivos(fileList){
+    Array.from(fileList).forEach(file => {
+      if(!file.type.startsWith('image/')) return;
+      ARQUIVOS_SELECIONADOS.push({ file, url: URL.createObjectURL(file) });
+    });
+    renderizarPreviews();
+  }
+
+  function renderizarPreviews(){
+    const grid = document.getElementById('preview-grid');
+    let html = '';
+    let idx = 0;
+
+    IMAGENS_EXISTENTES.forEach((url) => {
+      const isMain = idx === INDICE_IMAGEM_PRINCIPAL;
+      html += `
+        <div class="image-preview-item ${isMain ? 'selected' : ''}" data-tipo="existente" data-idx="${idx}">
+          <img src="${url}">
+          ${isMain ? '<div class="main-tag">Principal</div>' : ''}
+          <button type="button" class="remove-img" data-tipo="existente" data-idx="${idx}">×</button>
+        </div>`;
+      idx++;
+    });
+
+    ARQUIVOS_SELECIONADOS.forEach((item, i) => {
+      const globalIdx = IMAGENS_EXISTENTES.length + i;
+      const isMain = globalIdx === INDICE_IMAGEM_PRINCIPAL;
+      html += `
+        <div class="image-preview-item ${isMain ? 'selected' : ''}" data-tipo="novo" data-idx="${i}">
+          <img src="${item.url}">
+          ${isMain ? '<div class="main-tag">Principal</div>' : ''}
+          <button type="button" class="remove-img" data-tipo="novo" data-idx="${i}">×</button>
+        </div>`;
+    });
+
+    grid.innerHTML = html;
+
+    grid.querySelectorAll('.image-preview-item').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if(e.target.classList.contains('remove-img')) return;
+        const tipo = el.dataset.tipo;
+        const idx = parseInt(el.dataset.idx, 10);
+        INDICE_IMAGEM_PRINCIPAL = tipo === 'existente' ? idx : IMAGENS_EXISTENTES.length + idx;
+        renderizarPreviews();
+      });
+    });
+
+    grid.querySelectorAll('.remove-img').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tipo = btn.dataset.tipo;
+        const idx = parseInt(btn.dataset.idx, 10);
+        if(tipo === 'existente') IMAGENS_EXISTENTES.splice(idx, 1);
+        else ARQUIVOS_SELECIONADOS.splice(idx, 1);
+        if(INDICE_IMAGEM_PRINCIPAL >= IMAGENS_EXISTENTES.length + ARQUIVOS_SELECIONADOS.length){
+          INDICE_IMAGEM_PRINCIPAL = 0;
+        }
+        renderizarPreviews();
+      });
+    });
+  }
+
+  // ---------- Envio do formulário ----------
+  document.getElementById('pet-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const totalImagens = IMAGENS_EXISTENTES.length + ARQUIVOS_SELECIONADOS.length;
+
+    if(totalImagens === 0){
+      showToast('Adicione ao menos uma foto do pet.', 'warning');
+      return;
+    }
+
+    const publishAs = form.publishAs.value;
+    if(publishAs === 'ong' && (!USUARIO_DADOS || !USUARIO_DADOS.ongId)){
+      showToast('Você precisa cadastrar uma ONG antes de publicar em nome dela.', 'warning');
+      return;
+    }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner spinner-sm"></span> Publicando...';
+
+    try{
+      // 1. Upload das novas imagens para o Storage
+      const novasUrls = [];
+      for(const item of ARQUIVOS_SELECIONADOS){
+        const path = `pets/${USUARIO_LOGADO.uid}/${Date.now()}_${item.file.name}`;
+        const ref = storage.ref(path);
+        await ref.put(item.file);
+        const url = await ref.getDownloadURL();
+        novasUrls.push(url);
+      }
+
+      const todasImagens = [...IMAGENS_EXISTENTES, ...novasUrls];
+      const mainImage = todasImagens[INDICE_IMAGEM_PRINCIPAL] || todasImagens[0];
+
+      const petData = {
+        ownerId: USUARIO_LOGADO.uid,
+        ongId: publishAs === 'ong' ? USUARIO_DADOS.ongId : null,
+        name: form.name.value.trim(),
+        species: form.species.value,
+        breed: form.breed.value.trim(),
+        sex: form.sex.value,
+        age: form.age.value,
+        size: form.size.value,
+        city: form.city.value.trim(),
+        state: form.state.value,
+        description: form.description.value.trim(),
+        story: form.story.value.trim(),
+        vaccinated: form.vaccinated.checked,
+        neutered: form.neutered.checked,
+        specialNeeds: form.specialNeeds.value.trim(),
+        contactMethod: form.contactMethod.value.trim(),
+        images: todasImagens,
+        mainImage
+      };
+
+      if(form.petId.value){
+        await db.collection('pets').doc(form.petId.value).update(petData);
+        showToast('Anúncio atualizado com sucesso!', 'success');
+      } else {
+        petData.status = 'disponivel';
+        petData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('pets').add(petData);
+        showToast('Pet publicado com sucesso!', 'success');
+      }
+
+      setTimeout(() => window.location.href = 'meus-anuncios.html', 900);
+    }catch(err){
+      console.error(err);
+      showToast(traduzirErroFirebase(err), 'error');
+      btn.disabled = false;
+      btn.textContent = form.petId.value ? 'Salvar alterações' : 'Publicar pet';
+    }
+  });
+</script>
+</body>
+</html>

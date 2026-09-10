@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PetLar - Adote com amor</title>
+<meta name="description" content="Plataforma de adoção de animais. Encontre um pet ou publique um anúncio de adoção.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <h1>Todo pet merece um lar cheio de amor.</h1>
+      <p>O PetLar conecta animais que precisam de uma família a pessoas prontas para adotar. Sem intermediários, sem venda — apenas conexões reais.</p>
+      <div class="hero-actions">
+        <a href="pets.html" class="btn btn-secondary">🐾 Encontrar um pet</a>
+        <a href="publicar.html" class="btn btn-outline-white">➕ Colocar um pet para adoção</a>
+      </div>
+      <form class="hero-search" onsubmit="event.preventDefault(); window.location.href='pets.html?busca=' + encodeURIComponent(this.q.value);">
+        <input type="text" name="q" placeholder="Buscar por espécie, raça ou cidade...">
+        <button type="submit" class="btn btn-accent">Buscar</button>
+      </form>
+    </div>
+    <div class="hero-image">
+      <img src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?q=80&w=900&auto=format&fit=crop" alt="Cachorro feliz esperando adoção">
+    </div>
+  </div>
+</section>
+
+<!-- PETS RECENTES -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Pets esperando por um lar</h2>
+    <p class="section-subtitle">Conheça alguns dos animais cadastrados recentemente na plataforma.</p>
+    <div class="pets-grid" id="recent-pets-grid">
+      <div class="loading-spinner"><div class="spinner"></div></div>
+    </div>
+    <div class="text-center" style="margin-top:32px;">
+      <a href="pets.html" class="btn btn-primary">Ver todos os pets</a>
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section class="section bg-alt">
+  <div class="container">
+    <h2 class="section-title text-center">Como funciona?</h2>
+    <p class="section-subtitle text-center">Adotar um novo amigo é simples e seguro.</p>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-icon">1</div>
+        <h3>Encontre um pet</h3>
+        <p>Use os filtros para encontrar o companheiro ideal para sua casa e sua rotina.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-icon">2</div>
+        <h3>Conheça sua história</h3>
+        <p>Veja fotos, saúde, temperamento e a história de vida de cada animal.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-icon">3</div>
+        <h3>Entre em contato</h3>
+        <p>Fale com o responsável pelo anúncio de forma segura pela plataforma.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-icon">4</div>
+        <h3>Dê um novo lar</h3>
+        <p>Combine a adoção e mude a vida de um animal (e a sua também!).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ONGS PARCEIRAS -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">ONGs parceiras</h2>
+    <p class="section-subtitle">Organizações cadastradas na plataforma que também publicam pets para adoção.</p>
+    <div class="ongs-grid" id="partner-ongs-grid">
+      <div class="loading-spinner"><div class="spinner"></div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/header.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/pets.js"></script>
+<script>
+  initLayout('index');
+
+  async function carregarPetsRecentes(){
+    const grid = document.getElementById('recent-pets-grid');
+    try{
+      const pets = await buscarPets({ incluirAdotados: false });
+      const recentes = pets.slice(0, 8);
+      if(recentes.length === 0){
+        grid.innerHTML = `<div class="empty-state"><div class="icon">🐕</div><h3>Nenhum pet cadastrado ainda</h3><p>Seja o primeiro a publicar um pet para adoção!</p></div>`;
+        return;
+      }
+      grid.innerHTML = recentes.map(petCardHTML).join('');
+      atualizarBotoesFavorito();
+    }catch(err){
+      console.error(err);
+      grid.innerHTML = `<div class="empty-state"><h3>Erro ao carregar pets</h3><p>${traduzirErroFirebase(err)}</p></div>`;
+    }
+  }
+
+  async function carregarOngsParceiras(){
+    const grid = document.getElementById('partner-ongs-grid');
+    try{
+      const snap = await db.collection('ongs').where('status', '==', 'aprovada').limit(6).get();
+      const ongs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if(ongs.length === 0){
+        grid.innerHTML = `<div class="empty-state"><div class="icon">🏠</div><h3>Nenhuma ONG parceira ainda</h3><p>Cadastre a sua ONG e apareça aqui.</p></div>`;
+        return;
+      }
+      grid.innerHTML = ongs.map(o => `
+        <a href="ong.html?id=${o.id}" class="ong-card">
+          <img src="${o.logo || 'https://placehold.co/100x100?text=ONG'}" alt="${o.name}">
+          <div>
+            <h3>${o.name}</h3>
+            <p style="color:var(--color-text-light); font-size:0.85rem;">📍 ${o.city}/${o.state}</p>
+          </div>
+        </a>
+      `).join('');
+    }catch(err){
+      console.error(err);
+      grid.innerHTML = '';
+    }
+  }
+
+  carregarPetsRecentes();
+  carregarOngsParceiras();
+</script>
+</body>
+</html>

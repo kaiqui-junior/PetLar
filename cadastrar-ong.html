@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastrar ONG - PetLar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="container">
+
+  <div id="ja-tem-ong" class="form-card wide" style="display:none;">
+    <h2>Sua ONG 🏠</h2>
+    <p class="form-subtitle">Você já possui uma ONG vinculada ao seu perfil. Você pode publicar pets em nome dela na página "Publicar pet".</p>
+    <div id="ong-resumo" class="ong-card" style="margin-bottom:20px;"></div>
+    <a href="publicar.html" class="btn btn-primary">Publicar pet em nome da ONG</a>
+    <a id="ver-pagina-ong" href="#" class="btn btn-outline">Ver página pública da ONG</a>
+  </div>
+
+  <div id="form-ong-wrap" class="form-card wide">
+    <h2>Cadastrar minha ONG 🏠</h2>
+    <p class="form-subtitle">Cadastrar uma ONG é opcional. Você pode continuar publicando pets como pessoa física normalmente.</p>
+
+    <form id="ong-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome da ONG *</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>CNPJ <span class="hint" style="display:inline;">(opcional)</span></label>
+          <input type="text" name="cnpj" class="form-control" placeholder="00.000.000/0000-00">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Descrição da atuação *</label>
+        <textarea name="description" class="form-control" rows="3" required placeholder="Conte sobre a missão e o trabalho da ONG"></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cidade *</label>
+          <input type="text" name="city" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Estado *</label>
+          <select name="state" class="form-control" id="state-select-ong" required></select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Endereço</label>
+        <input type="text" name="address" class="form-control" placeholder="Rua, número, bairro">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Telefone *</label>
+          <input type="tel" name="phone" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>E-mail *</label>
+          <input type="email" name="email" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Instagram / Site</label>
+        <input type="text" name="instagram" class="form-control" placeholder="@ong ou https://...">
+      </div>
+
+      <div class="form-group">
+        <label>Logo da ONG</label>
+        <div class="image-upload-box" id="logo-upload-box">
+          📷 Clique para enviar a logo da ONG
+          <input type="file" id="logo-input" accept="image/*" style="display:none;">
+        </div>
+        <div class="image-preview-grid" id="logo-preview"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" id="ong-submit-btn">Cadastrar ONG</button>
+    </form>
+  </div>
+</div>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/header.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  initLayout('ong');
+
+  const stateSelect = document.getElementById('state-select-ong');
+  stateSelect.innerHTML = ESTADOS_BR.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+
+  let USUARIO = null;
+  let LOGO_FILE = null;
+
+  exigirLogin(async (user) => {
+    USUARIO = user;
+    const dados = await getUserData(user.uid);
+    if(dados && dados.ongId){
+      const ongDoc = await db.collection('ongs').doc(dados.ongId).get();
+      if(ongDoc.exists){
+        mostrarOngExistente({ id: ongDoc.id, ...ongDoc.data() });
+      }
+    }
+  });
+
+  function mostrarOngExistente(ong){
+    document.getElementById('form-ong-wrap').style.display = 'none';
+    document.getElementById('ja-tem-ong').style.display = 'block';
+    document.getElementById('ver-pagina-ong').href = `ong.html?id=${ong.id}`;
+    document.getElementById('ong-resumo').innerHTML = `
+      <img src="${ong.logo || 'https://placehold.co/64x64?text=ONG'}" alt="${ong.name}">
+      <div>
+        <h3>${ong.name}</h3>
+        <p style="color:var(--color-text-light); font-size:0.85rem;">📍 ${ong.city}/${ong.state}</p>
+        <span class="badge ${ong.status === 'aprovada' ? 'badge-green' : 'badge-orange'}">${LABELS.ongStatus[ong.status] || ong.status}</span>
+      </div>
+    `;
+  }
+
+  const logoBox = document.getElementById('logo-upload-box');
+  const logoInput = document.getElementById('logo-input');
+  logoBox.addEventListener('click', () => logoInput.click());
+  logoInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    LOGO_FILE = file;
+    document.getElementById('logo-preview').innerHTML = `
+      <div class="image-preview-item selected"><img src="${URL.createObjectURL(file)}"><div class="main-tag">Logo</div></div>`;
+  });
+
+  document.getElementById('ong-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const btn = document.getElementById('ong-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner spinner-sm"></span> Cadastrando...';
+
+    try{
+      let logoUrl = '';
+      if(LOGO_FILE){
+        const ref = storage.ref(`ongs/${USUARIO.uid}_logo_${Date.now()}`);
+        await ref.put(LOGO_FILE);
+        logoUrl = await ref.getDownloadURL();
+      }
+
+      const ongData = {
+        ownerId: USUARIO.uid,
+        name: form.name.value.trim(),
+        cnpj: form.cnpj.value.trim(),
+        description: form.description.value.trim(),
+        city: form.city.value.trim(),
+        state: form.state.value,
+        address: form.address.value.trim(),
+        phone: form.phone.value.trim(),
+        email: form.email.value.trim(),
+        instagram: form.instagram.value.trim(),
+        website: '',
+        logo: logoUrl,
+        images: [],
+        status: 'aprovada',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      const ongRef = await db.collection('ongs').add(ongData);
+      await db.collection('users').doc(USUARIO.uid).update({ ongId: ongRef.id });
+
+      showToast('ONG cadastrada com sucesso!', 'success');
+      mostrarOngExistente({ id: ongRef.id, ...ongData });
+    }catch(err){
+      showToast(traduzirErroFirebase(err), 'error');
+      btn.disabled = false;
+      btn.textContent = 'Cadastrar ONG';
+    }
+  });
+</script>
+</body>
+</html>

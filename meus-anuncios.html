@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meus anúncios - PetLar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="container" style="padding-top:32px; padding-bottom:60px;">
+  <div class="panel-header">
+    <div>
+      <h1 class="section-title" style="margin-bottom:4px;">Meus anúncios</h1>
+      <p class="section-subtitle" style="margin-bottom:0;">Gerencie os pets que você publicou.</p>
+    </div>
+    <a href="publicar.html" class="btn btn-primary">➕ Publicar novo pet</a>
+  </div>
+
+  <div class="pets-grid" id="my-pets-grid">
+    <div class="loading-spinner"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/header.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/pets.js"></script>
+<script>
+  initLayout('');
+  let UID_ATUAL = null;
+
+  exigirLogin((user) => {
+    UID_ATUAL = user.uid;
+    carregarMeusAnuncios();
+  });
+
+  function cardMeuAnuncioHTML(pet){
+    const isAdotado = pet.status === 'adotado';
+    return `
+    <div class="pet-card" data-id="${pet.id}">
+      <div class="pet-card-img">
+        <img src="${pet.mainImage}" alt="${pet.name}">
+        <span class="pet-card-badge ${isAdotado ? 'adopted' : ''}">${isAdotado ? 'Adotado' : 'Disponível'}</span>
+      </div>
+      <div class="pet-card-body">
+        <h3>${pet.name}</h3>
+        <div class="pet-card-meta">
+          <span>${LABELS.species[pet.species] || pet.species}</span>
+          <span>${LABELS.age[pet.age] || pet.age}</span>
+        </div>
+        <div class="pet-card-location">📍 ${pet.city}/${pet.state}</div>
+      </div>
+      <div class="pet-card-footer" style="display:flex; flex-direction:column; gap:8px;">
+        <a href="pet.html?id=${pet.id}" class="btn btn-outline btn-sm btn-block">Visualizar</a>
+        <a href="publicar.html?id=${pet.id}" class="btn btn-secondary btn-sm btn-block">Editar</a>
+        ${isAdotado
+          ? `<button class="btn btn-accent btn-sm btn-block js-reativar" data-id="${pet.id}">Reativar anúncio</button>`
+          : `<button class="btn btn-accent btn-sm btn-block js-adotado" data-id="${pet.id}">Marcar como adotado</button>`
+        }
+        <button class="btn btn-danger btn-sm btn-block js-excluir" data-id="${pet.id}">Excluir</button>
+      </div>
+    </div>`;
+  }
+
+  async function carregarMeusAnuncios(){
+    const grid = document.getElementById('my-pets-grid');
+    try{
+      const pets = await buscarPets({ ownerId: UID_ATUAL });
+      if(pets.length === 0){
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🐾</div><h3>Você ainda não publicou nenhum pet</h3><p>Que tal ajudar um animal a encontrar um lar?</p><a href="publicar.html" class="btn btn-primary" style="margin-top:16px;">Publicar meu primeiro pet</a></div>`;
+        return;
+      }
+      grid.innerHTML = pets.map(cardMeuAnuncioHTML).join('');
+    }catch(err){
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><h3>Erro ao carregar anúncios</h3><p>${traduzirErroFirebase(err)}</p></div>`;
+    }
+  }
+
+  document.addEventListener('click', async (e) => {
+    const idEl = e.target.closest('[data-id]');
+    if(!idEl) return;
+    const petId = idEl.dataset.id;
+
+    if(e.target.classList.contains('js-adotado')){
+      const ok = await confirmarAcao('Marcar como adotado?', 'O pet deixará de aparecer na lista de disponíveis para adoção.');
+      if(!ok) return;
+      await db.collection('pets').doc(petId).update({ status: 'adotado' });
+      showToast('Pet marcado como adotado. Parabéns pela adoção! 🎉', 'success');
+      carregarMeusAnuncios();
+    }
+
+    if(e.target.classList.contains('js-reativar')){
+      await db.collection('pets').doc(petId).update({ status: 'disponivel' });
+      showToast('Anúncio reativado.', 'success');
+      carregarMeusAnuncios();
+    }
+
+    if(e.target.classList.contains('js-excluir')){
+      const ok = await confirmarAcao('Excluir anúncio?', 'Esta ação não pode ser desfeita.');
+      if(!ok) return;
+      await db.collection('pets').doc(petId).delete();
+      showToast('Anúncio excluído.', 'success');
+      carregarMeusAnuncios();
+    }
+  });
+</script>
+</body>
+</html>

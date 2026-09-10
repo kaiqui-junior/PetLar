@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meus favoritos - PetLar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="container" style="padding-top:32px; padding-bottom:60px;">
+  <h1 class="section-title">Meus favoritos ❤</h1>
+  <p class="section-subtitle">Pets que você salvou para ver depois.</p>
+
+  <div class="pets-grid" id="fav-grid">
+    <div class="loading-spinner"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/header.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/pets.js"></script>
+<script>
+  initLayout('');
+
+  exigirLogin((user) => {
+    carregarFavoritos(user.uid);
+  });
+
+  async function carregarFavoritos(uid){
+    const grid = document.getElementById('fav-grid');
+    try{
+      const favSnap = await db.collection('favorites').where('userId', '==', uid).get();
+      const petIds = favSnap.docs.map(d => d.data().petId);
+
+      if(petIds.length === 0){
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">❤</div><h3>Você ainda não favoritou nenhum pet</h3><p>Explore os pets disponíveis e favorite os que mais gostar.</p><a href="pets.html" class="btn btn-primary" style="margin-top:16px;">Ver pets disponíveis</a></div>`;
+        return;
+      }
+
+      const pets = [];
+      for(const id of petIds){
+        const doc = await db.collection('pets').doc(id).get();
+        if(doc.exists) pets.push({ id: doc.id, ...doc.data() });
+      }
+
+      if(pets.length === 0){
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><h3>Os pets favoritados não estão mais disponíveis</h3></div>`;
+        return;
+      }
+
+      grid.innerHTML = pets.map(petCardHTML).join('');
+      await carregarFavoritosUsuario(uid);
+      atualizarBotoesFavorito();
+
+      // Atualiza a lista automaticamente quando um item é desfavoritado
+      grid.addEventListener('click', (e) => {
+        const btn = e.target.closest('.js-fav-btn');
+        if(btn) setTimeout(() => carregarFavoritos(uid), 500);
+      });
+    }catch(err){
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><h3>Erro ao carregar favoritos</h3><p>${traduzirErroFirebase(err)}</p></div>`;
+    }
+  }
+</script>
+</body>
+</html>

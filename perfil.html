@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu perfil - PetLar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="container" style="padding-top:32px; padding-bottom:60px;">
+
+  <div class="profile-header">
+    <img id="profile-avatar" class="profile-avatar" src="" alt="Foto de perfil">
+    <div class="profile-info">
+      <h2 id="profile-name">Carregando...</h2>
+      <p id="profile-location">-</p>
+      <div class="profile-stats">
+        <div><strong id="stat-pets">0</strong><span>Pets publicados</span></div>
+        <div><strong id="stat-favs">0</strong><span>Favoritos</span></div>
+        <div><strong id="stat-ong">Não</strong><span>Possui ONG</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dados">Meus dados</button>
+    <button class="tab-btn" data-tab="senha">Segurança</button>
+  </div>
+
+  <div id="tab-dados" class="form-card wide" style="margin:0;">
+    <h2 style="font-size:1.2rem;">Editar informações</h2>
+    <form id="perfil-form">
+      <div class="form-group">
+        <label>Foto de perfil</label>
+        <div class="image-upload-box" id="avatar-upload-box">
+          📷 Clique para trocar sua foto de perfil
+          <input type="file" id="avatar-input" accept="image/*" style="display:none;">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="tel" name="phone" class="form-control">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cidade</label>
+          <input type="text" name="city" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select name="state" class="form-control" id="state-select-perfil" required></select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" id="save-profile-btn">Salvar alterações</button>
+    </form>
+  </div>
+
+  <div id="tab-senha" class="form-card wide" style="margin:0; display:none;">
+    <h2 style="font-size:1.2rem;">Alterar senha</h2>
+    <p class="form-subtitle">Enviaremos um link de redefinição de senha para o seu e-mail cadastrado.</p>
+    <button class="btn btn-secondary" id="reset-pass-btn">Enviar e-mail de redefinição de senha</button>
+  </div>
+
+</div>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/header.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/pets.js"></script>
+<script>
+  initLayout('');
+
+  const stateSelect = document.getElementById('state-select-perfil');
+  stateSelect.innerHTML = ESTADOS_BR.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+
+  let USUARIO = null;
+  let DADOS = null;
+  let NOVO_AVATAR_FILE = null;
+
+  exigirLogin(async (user) => {
+    USUARIO = user;
+    DADOS = await getUserData(user.uid);
+    preencherPerfil();
+    carregarEstatisticas();
+  });
+
+  function preencherPerfil(){
+    document.getElementById('profile-avatar').src = DADOS.profileImage;
+    document.getElementById('profile-name').textContent = DADOS.name;
+    document.getElementById('profile-location').textContent = `📍 ${DADOS.city || '-'}/${DADOS.state || '-'} • ${DADOS.email}`;
+    document.getElementById('stat-ong').textContent = DADOS.ongId ? 'Sim' : 'Não';
+
+    const form = document.getElementById('perfil-form');
+    form.name.value = DADOS.name || '';
+    form.phone.value = DADOS.phone || '';
+    form.city.value = DADOS.city || '';
+    form.state.value = DADOS.state || '';
+  }
+
+  async function carregarEstatisticas(){
+    const petsSnap = await db.collection('pets').where('ownerId', '==', USUARIO.uid).get();
+    document.getElementById('stat-pets').textContent = petsSnap.size;
+
+    const favSnap = await db.collection('favorites').where('userId', '==', USUARIO.uid).get();
+    document.getElementById('stat-favs').textContent = favSnap.size;
+  }
+
+  // Tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-dados').style.display = btn.dataset.tab === 'dados' ? 'block' : 'none';
+      document.getElementById('tab-senha').style.display = btn.dataset.tab === 'senha' ? 'block' : 'none';
+    });
+  });
+
+  // Avatar upload
+  const avatarBox = document.getElementById('avatar-upload-box');
+  const avatarInput = document.getElementById('avatar-input');
+  avatarBox.addEventListener('click', () => avatarInput.click());
+  avatarInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    NOVO_AVATAR_FILE = file;
+    document.getElementById('profile-avatar').src = URL.createObjectURL(file);
+    showToast('Foto selecionada. Clique em "Salvar alterações" para confirmar.', 'success');
+  });
+
+  // Salvar perfil
+  document.getElementById('perfil-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const btn = document.getElementById('save-profile-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner spinner-sm"></span> Salvando...';
+
+    try{
+      const updateData = {
+        name: form.name.value.trim(),
+        phone: form.phone.value.trim(),
+        city: form.city.value.trim(),
+        state: form.state.value
+      };
+
+      if(NOVO_AVATAR_FILE){
+        const path = `avatars/${USUARIO.uid}_${Date.now()}`;
+        const ref = storage.ref(path);
+        await ref.put(NOVO_AVATAR_FILE);
+        updateData.profileImage = await ref.getDownloadURL();
+      }
+
+      await db.collection('users').doc(USUARIO.uid).update(updateData);
+      DADOS = { ...DADOS, ...updateData };
+      preencherPerfil();
+      showToast('Perfil atualizado com sucesso!', 'success');
+    }catch(err){
+      showToast(traduzirErroFirebase(err), 'error');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Salvar alterações';
+  });
+
+  document.getElementById('reset-pass-btn').addEventListener('click', async () => {
+    try{
+      await recuperarSenha(DADOS.email);
+      showToast('E-mail de redefinição de senha enviado!', 'success');
+    }catch(err){
+      showToast(traduzirErroFirebase(err), 'error');
+    }
+  });
+</script>
+</body>
+</html>

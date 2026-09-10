@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detalhes do Pet - PetLar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="container" style="padding-top:32px; padding-bottom:60px;" id="pet-container">
+  <div class="loading-spinner"><div class="spinner"></div></div>
+</div>
+
+<!-- Modal: Interesse em adotar -->
+<div class="modal-overlay" id="interesse-modal">
+  <div class="modal-box">
+    <h3>Tenho interesse em adotar 🐾</h3>
+    <p id="interesse-info">Entre em contato com o responsável pelo anúncio pelo(s) meio(s) informado(s) abaixo.</p>
+    <div id="contato-info" style="background:var(--color-bg); padding:14px; border-radius:10px; margin-bottom:18px; font-size:0.92rem;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-block js-close-interesse">Entendi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Denúncia -->
+<div class="modal-overlay" id="denuncia-modal">
+  <div class="modal-box">
+    <h3>Denunciar anúncio</h3>
+    <p>Nos ajude a manter a plataforma segura. Conte o que há de errado com este anúncio.</p>
+    <form id="denuncia-form">
+      <div class="form-group">
+        <label>Motivo</label>
+        <select class="form-control" name="reason" required>
+          <option value="">Selecione...</option>
+          <option value="informacao_falsa">Informação falsa</option>
+          <option value="animal_venda">Suspeita de venda de animal</option>
+          <option value="conteudo_ofensivo">Conteúdo ofensivo</option>
+          <option value="anuncio_duplicado">Anúncio duplicado</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <textarea class="form-control" name="description" rows="3" placeholder="Descreva o problema..." required></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost js-close-denuncia">Cancelar</button>
+        <button type="submit" class="btn btn-danger">Enviar denúncia</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/header.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/pets.js"></script>
+<script>
+  initLayout('pets');
+
+  const petId = getParam('id');
+  let PET_ATUAL = null;
+
+  async function carregarPet(){
+    const container = document.getElementById('pet-container');
+    if(!petId){
+      container.innerHTML = `<div class="empty-state"><h3>Pet não encontrado</h3></div>`;
+      return;
+    }
+    try{
+      const doc = await db.collection('pets').doc(petId).get();
+      if(!doc.exists){
+        container.innerHTML = `<div class="empty-state"><div class="icon">🐾</div><h3>Este anúncio não existe ou foi removido</h3><a href="pets.html" class="btn btn-primary" style="margin-top:16px;">Ver outros pets</a></div>`;
+        return;
+      }
+      PET_ATUAL = { id: doc.id, ...doc.data() };
+      renderizarPet(PET_ATUAL);
+
+      // busca dados do responsável e da ONG (se houver)
+      const owner = await getUserData(PET_ATUAL.ownerId);
+      let ong = null;
+      if(PET_ATUAL.ongId){
+        const ongDoc = await db.collection('ongs').doc(PET_ATUAL.ongId).get();
+        if(ongDoc.exists) ong = { id: ongDoc.id, ...ongDoc.data() };
+      }
+      renderizarResponsavel(owner, ong);
+    }catch(err){
+      console.error(err);
+      container.innerHTML = `<div class="empty-state"><h3>Erro ao carregar pet</h3><p>${traduzirErroFirebase(err)}</p></div>`;
+    }
+  }
+
+  function renderizarPet(pet){
+    const container = document.getElementById('pet-container');
+    const imagens = (pet.images && pet.images.length) ? pet.images : [pet.mainImage || 'https://placehold.co/600x450?text=Pet'];
+    const principal = pet.mainImage || imagens[0];
+
+    container.innerHTML = `
+      <div class="pet-detail">
+        <div>
+          <div class="pet-gallery-main"><img id="main-gallery-img" src="${principal}" alt="${pet.name}"></div>
+          <div class="pet-gallery-thumbs">
+            ${imagens.map((img, i) => `<img src="${img}" class="${img===principal?'active':''}" onclick="trocarImagemPrincipal('${img}', this)">`).join('')}
+          </div>
+
+          <div class="pet-section">
+            <h3>Sobre ${pet.name}</h3>
+            <p>${pet.description || 'Sem descrição.'}</p>
+          </div>
+          <div class="pet-section">
+            <h3>História</h3>
+            <p>${pet.story || 'Sem história cadastrada.'}</p>
+          </div>
+          <div class="pet-section">
+            <h3>Informações de saúde</h3>
+            <div class="health-grid">
+              <div class="health-item">${pet.vaccinated ? '✅' : '❌'} Vacinado</div>
+              <div class="health-item">${pet.neutered ? '✅' : '❌'} Castrado</div>
+            </div>
+            ${pet.specialNeeds ? `<p style="margin-top:12px;"><strong>Necessidades especiais:</strong> ${pet.specialNeeds}</p>` : ''}
+          </div>
+        </div>
+
+        <div class="pet-info-card">
+          ${pet.status === 'adotado' ? '<span class="badge badge-gray" style="margin-bottom:10px;">Adotado</span>' : '<span class="badge badge-green" style="margin-bottom:10px;">Disponível para adoção</span>'}
+          <h1>${pet.name}</h1>
+          <div class="pet-location">📍 ${pet.city}/${pet.state} • Publicado em ${formatarData(pet.createdAt)}</div>
+          <div class="pet-tags">
+            <span class="pet-tag">${LABELS.species[pet.species] || pet.species}</span>
+            <span class="pet-tag">${pet.breed || 'SRD'}</span>
+            <span class="pet-tag">${LABELS.sex[pet.sex] || pet.sex}</span>
+            <span class="pet-tag">${LABELS.age[pet.age] || pet.age}</span>
+            <span class="pet-tag">${LABELS.size[pet.size] || pet.size}</span>
+          </div>
+
+          <div class="pet-action-row">
+            <button class="btn btn-primary" id="btn-interesse">💌 Tenho interesse em adotar</button>
+            <button class="btn btn-outline js-fav-btn" data-id="${pet.id}" id="btn-favoritar">♥ Favoritar</button>
+          </div>
+          <div class="pet-action-row">
+            <button class="btn btn-ghost btn-sm" id="btn-denunciar">🚩 Denunciar anúncio</button>
+          </div>
+
+          <div id="responsavel-container"></div>
+        </div>
+      </div>
+    `;
+
+    atualizarBotoesFavorito();
+
+    document.getElementById('btn-interesse').addEventListener('click', () => {
+      if(!CURRENT_USER){
+        showToast('Você precisa estar logado para demonstrar interesse.', 'warning');
+        return;
+      }
+      document.getElementById('interesse-modal').classList.add('open');
+    });
+
+    document.getElementById('btn-denunciar').addEventListener('click', () => {
+      if(!CURRENT_USER){
+        showToast('Você precisa estar logado para denunciar um anúncio.', 'warning');
+        return;
+      }
+      document.getElementById('denuncia-modal').classList.add('open');
+    });
+  }
+
+  function trocarImagemPrincipal(src, el){
+    document.getElementById('main-gallery-img').src = src;
+    document.querySelectorAll('.pet-gallery-thumbs img').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function renderizarResponsavel(owner, ong){
+    const box = document.getElementById('responsavel-container');
+    if(ong){
+      box.innerHTML = `
+        <div class="responsible-box">
+          <img src="${ong.logo || 'https://placehold.co/48x48?text=ONG'}" alt="${ong.name}">
+          <div>
+            <strong>${ong.name}</strong>
+            <div style="font-size:0.82rem; color:var(--color-text-light);">ONG parceira • <a href="ong.html?id=${ong.id}" style="color:var(--color-primary-dark); font-weight:600;">ver perfil</a></div>
+          </div>
+        </div>`;
+      document.getElementById('contato-info').innerHTML = `
+        <p><strong>E-mail:</strong> ${ong.email || 'não informado'}</p>
+        <p><strong>Telefone:</strong> ${ong.phone || 'não informado'}</p>
+        ${ong.instagram ? `<p><strong>Instagram:</strong> ${ong.instagram}</p>` : ''}
+      `;
+    } else if(owner){
+      box.innerHTML = `
+        <div class="responsible-box">
+          <img src="${owner.profileImage || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(owner.name)}" alt="${owner.name}">
+          <div>
+            <strong>${owner.name}</strong>
+            <div style="font-size:0.82rem; color:var(--color-text-light);">Anunciante independente</div>
+          </div>
+        </div>`;
+      document.getElementById('contato-info').innerHTML = `
+        <p>Para preservar a privacidade, o contato direto só é revelado a usuários logados.</p>
+        ${PET_ATUAL.contactMethod ? `<p style="margin-top:8px;"><strong>Forma de contato informada:</strong> ${PET_ATUAL.contactMethod}</p>` : ''}
+      `;
+    }
+  }
+
+  // Fechar modais
+  document.querySelector('.js-close-interesse').addEventListener('click', () => document.getElementById('interesse-modal').classList.remove('open'));
+  document.querySelector('.js-close-denuncia').addEventListener('click', () => document.getElementById('denuncia-modal').classList.remove('open'));
+
+  // Enviar denúncia
+  document.getElementById('denuncia-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const reason = form.reason.value;
+    const description = form.description.value.trim();
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    try{
+      await db.collection('reports').add({
+        petId: PET_ATUAL.id,
+        petName: PET_ATUAL.name,
+        reportedBy: CURRENT_USER.uid,
+        reason,
+        description,
+        status: 'pendente',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      showToast('Denúncia enviada. Obrigado por ajudar a manter o PetLar seguro!', 'success');
+      document.getElementById('denuncia-modal').classList.remove('open');
+      form.reset();
+    }catch(err){
+      showToast(traduzirErroFirebase(err), 'error');
+    }
+    btn.disabled = false;
+  });
+
+  carregarPet();
+</script>
+</body>
+</html>

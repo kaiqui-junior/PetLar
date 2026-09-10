@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Administrativo - PetLar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="container" style="padding-top:32px; padding-bottom:60px;">
+  <h1 class="section-title">Painel Administrativo ⚙</h1>
+  <p class="section-subtitle">Visão geral da plataforma e gerenciamento de conteúdo.</p>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <h4>Total de usuários</h4>
+      <div class="stat-value" id="stat-users">-</div>
+    </div>
+    <div class="stat-card orange">
+      <h4>Total de pets</h4>
+      <div class="stat-value" id="stat-pets-total">-</div>
+    </div>
+    <div class="stat-card">
+      <h4>Pets disponíveis</h4>
+      <div class="stat-value" id="stat-pets-disponiveis">-</div>
+    </div>
+    <div class="stat-card blue">
+      <h4>Pets adotados</h4>
+      <div class="stat-value" id="stat-pets-adotados">-</div>
+    </div>
+    <div class="stat-card blue">
+      <h4>Total de ONGs</h4>
+      <div class="stat-value" id="stat-ongs">-</div>
+    </div>
+    <div class="stat-card red">
+      <h4>Denúncias</h4>
+      <div class="stat-value" id="stat-reports">-</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="usuarios">Usuários</button>
+    <button class="tab-btn" data-tab="anuncios">Anúncios</button>
+    <button class="tab-btn" data-tab="ongs">ONGs</button>
+    <button class="tab-btn" data-tab="denuncias">Denúncias</button>
+  </div>
+
+  <div id="tab-usuarios" class="table-wrap">
+    <table>
+      <thead><tr><th>Nome</th><th>E-mail</th><th>Cidade/UF</th><th>Cadastro</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody id="tbody-usuarios"><tr><td colspan="6">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div id="tab-anuncios" class="table-wrap" style="display:none;">
+    <table>
+      <thead><tr><th>Pet</th><th>Espécie</th><th>Cidade/UF</th><th>Status</th><th>Publicado em</th><th>Ações</th></tr></thead>
+      <tbody id="tbody-anuncios"><tr><td colspan="6">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div id="tab-ongs" class="table-wrap" style="display:none;">
+    <table>
+      <thead><tr><th>ONG</th><th>Cidade/UF</th><th>Contato</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody id="tbody-ongs"><tr><td colspan="5">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div id="tab-denuncias" class="table-wrap" style="display:none;">
+    <table>
+      <thead><tr><th>Pet denunciado</th><th>Motivo</th><th>Descrição</th><th>Data</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody id="tbody-denuncias"><tr><td colspan="6">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/header.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  initLayout('');
+
+  exigirAdmin(() => {
+    carregarEstatisticas();
+    carregarUsuarios();
+    carregarAnuncios();
+    carregarOngs();
+    carregarDenuncias();
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ['usuarios','anuncios','ongs','denuncias'].forEach(tab => {
+        document.getElementById('tab-' + tab).style.display = tab === btn.dataset.tab ? 'block' : 'none';
+      });
+    });
+  });
+
+  async function carregarEstatisticas(){
+    const [usersSnap, petsSnap, ongsSnap, reportsSnap] = await Promise.all([
+      db.collection('users').get(),
+      db.collection('pets').get(),
+      db.collection('ongs').get(),
+      db.collection('reports').get()
+    ]);
+    const pets = petsSnap.docs.map(d => d.data());
+    document.getElementById('stat-users').textContent = usersSnap.size;
+    document.getElementById('stat-pets-total').textContent = petsSnap.size;
+    document.getElementById('stat-pets-disponiveis').textContent = pets.filter(p => p.status === 'disponivel').length;
+    document.getElementById('stat-pets-adotados').textContent = pets.filter(p => p.status === 'adotado').length;
+    document.getElementById('stat-ongs').textContent = ongsSnap.size;
+    document.getElementById('stat-reports').textContent = reportsSnap.size;
+  }
+
+  // ---------- Usuários ----------
+  async function carregarUsuarios(){
+    const tbody = document.getElementById('tbody-usuarios');
+    const snap = await db.collection('users').get();
+    if(snap.empty){ tbody.innerHTML = '<tr><td colspan="6">Nenhum usuário encontrado.</td></tr>'; return; }
+    tbody.innerHTML = snap.docs.map(doc => {
+      const u = doc.data();
+      return `
+        <tr>
+          <td>${u.name || '-'}</td>
+          <td>${u.email || '-'}</td>
+          <td>${u.city || '-'}/${u.state || '-'}</td>
+          <td>${formatarData(u.createdAt)}</td>
+          <td>${u.blocked ? '<span class="badge badge-red">Bloqueado</span>' : '<span class="badge badge-green">Ativo</span>'}</td>
+          <td>
+            <button class="btn btn-sm ${u.blocked ? 'btn-secondary' : 'btn-danger'} js-toggle-block" data-id="${doc.id}" data-blocked="${!!u.blocked}">
+              ${u.blocked ? 'Desbloquear' : 'Bloquear'}
+            </button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('tbody-usuarios').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.js-toggle-block');
+    if(!btn) return;
+    const id = btn.dataset.id;
+    const blocked = btn.dataset.blocked === 'true';
+    const ok = await confirmarAcao(blocked ? 'Desbloquear usuário?' : 'Bloquear usuário?', blocked ? 'O usuário voltará a ter acesso normal à plataforma.' : 'O usuário não conseguirá mais fazer login na plataforma.');
+    if(!ok) return;
+    await db.collection('users').doc(id).update({ blocked: !blocked });
+    showToast('Status do usuário atualizado.', 'success');
+    carregarUsuarios();
+  });
+
+  // ---------- Anúncios ----------
+  async function carregarAnuncios(){
+    const tbody = document.getElementById('tbody-anuncios');
+    const snap = await db.collection('pets').get();
+    if(snap.empty){ tbody.innerHTML = '<tr><td colspan="6">Nenhum anúncio encontrado.</td></tr>'; return; }
+    const pets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    pets.sort((a,b) => (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
+
+    tbody.innerHTML = pets.map(p => `
+      <tr>
+        <td>${p.name}</td>
+        <td>${LABELS.species[p.species] || p.species}</td>
+        <td>${p.city}/${p.state}</td>
+        <td>
+          <select class="form-control js-status-select" data-id="${p.id}" style="padding:6px 10px; font-size:0.8rem;">
+            <option value="disponivel" ${p.status==='disponivel'?'selected':''}>Disponível</option>
+            <option value="pendente" ${p.status==='pendente'?'selected':''}>Pendente</option>
+            <option value="adotado" ${p.status==='adotado'?'selected':''}>Adotado</option>
+          </select>
+        </td>
+        <td>${formatarData(p.createdAt)}</td>
+        <td>
+          <a href="pet.html?id=${p.id}" class="btn btn-outline btn-sm" target="_blank">Ver</a>
+          <button class="btn btn-danger btn-sm js-del-pet" data-id="${p.id}">Excluir</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('tbody-anuncios').addEventListener('change', async (e) => {
+    const sel = e.target.closest('.js-status-select');
+    if(!sel) return;
+    await db.collection('pets').doc(sel.dataset.id).update({ status: sel.value });
+    showToast('Status do anúncio atualizado.', 'success');
+    carregarEstatisticas();
+  });
+
+  document.getElementById('tbody-anuncios').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.js-del-pet');
+    if(!btn) return;
+    const ok = await confirmarAcao('Excluir anúncio?', 'Esta ação removerá o anúncio permanentemente.');
+    if(!ok) return;
+    await db.collection('pets').doc(btn.dataset.id).delete();
+    showToast('Anúncio excluído.', 'success');
+    carregarAnuncios();
+    carregarEstatisticas();
+  });
+
+  // ---------- ONGs ----------
+  async function carregarOngs(){
+    const tbody = document.getElementById('tbody-ongs');
+    const snap = await db.collection('ongs').get();
+    if(snap.empty){ tbody.innerHTML = '<tr><td colspan="5">Nenhuma ONG cadastrada.</td></tr>'; return; }
+    tbody.innerHTML = snap.docs.map(doc => {
+      const o = doc.data();
+      return `
+        <tr>
+          <td>${o.name}</td>
+          <td>${o.city}/${o.state}</td>
+          <td>${o.email || '-'}<br>${o.phone || ''}</td>
+          <td><span class="badge ${o.status==='aprovada'?'badge-green':(o.status==='rejeitada'?'badge-red':'badge-orange')}">${LABELS.ongStatus[o.status] || o.status}</span></td>
+          <td>
+            <select class="form-control js-ong-status" data-id="${doc.id}" style="padding:6px 10px; font-size:0.8rem;">
+              <option value="pendente" ${o.status==='pendente'?'selected':''}>Pendente</option>
+              <option value="aprovada" ${o.status==='aprovada'?'selected':''}>Aprovada</option>
+              <option value="rejeitada" ${o.status==='rejeitada'?'selected':''}>Rejeitada</option>
+            </select>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('tbody-ongs').addEventListener('change', async (e) => {
+    const sel = e.target.closest('.js-ong-status');
+    if(!sel) return;
+    await db.collection('ongs').doc(sel.dataset.id).update({ status: sel.value });
+    showToast('Status da ONG atualizado.', 'success');
+    carregarOngs();
+  });
+
+  // ---------- Denúncias ----------
+  async function carregarDenuncias(){
+    const tbody = document.getElementById('tbody-denuncias');
+    const snap = await db.collection('reports').get();
+    if(snap.empty){ tbody.innerHTML = '<tr><td colspan="6">Nenhuma denúncia registrada.</td></tr>'; return; }
+    const reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    reports.sort((a,b) => (b.createdAt?.toMillis?.()||0) - (a.createdAt?.toMillis?.()||0));
+
+    tbody.innerHTML = reports.map(r => `
+      <tr>
+        <td><a href="pet.html?id=${r.petId}" target="_blank">${r.petName || r.petId}</a></td>
+        <td>${r.reason}</td>
+        <td>${r.description}</td>
+        <td>${formatarData(r.createdAt)}</td>
+        <td><span class="badge ${r.status==='resolvida'?'badge-green':'badge-orange'}">${r.status}</span></td>
+        <td>
+          <button class="btn btn-secondary btn-sm js-resolver" data-id="${r.id}">Marcar resolvida</button>
+          <button class="btn btn-danger btn-sm js-del-pet-denuncia" data-pet="${r.petId}">Excluir pet</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('tbody-denuncias').addEventListener('click', async (e) => {
+    const resolverBtn = e.target.closest('.js-resolver');
+    if(resolverBtn){
+      await db.collection('reports').doc(resolverBtn.dataset.id).update({ status: 'resolvida' });
+      showToast('Denúncia marcada como resolvida.', 'success');
+      carregarDenuncias();
+      return;
+    }
+    const delBtn = e.target.closest('.js-del-pet-denuncia');
+    if(delBtn){
+      const ok = await confirmarAcao('Excluir pet denunciado?', 'O anúncio será removido permanentemente da plataforma.');
+      if(!ok) return;
+      await db.collection('pets').doc(delBtn.dataset.pet).delete();
+      showToast('Anúncio removido.', 'success');
+      carregarAnuncios();
+      carregarEstatisticas();
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ONG - PetLar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div id="ong-header-wrap">
+  <div class="loading-spinner"><div class="spinner"></div></div>
+</div>
+
+<div class="container section">
+  <h2 class="section-title">Pets disponíveis desta ONG</h2>
+  <div class="pets-grid" id="ong-pets-grid">
+    <div class="loading-spinner"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<footer class="site-footer" id="site-footer"></footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/header.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/pets.js"></script>
+<script>
+  initLayout('');
+  const ongId = getParam('id');
+
+  async function carregarOng(){
+    const wrap = document.getElementById('ong-header-wrap');
+    const petsGrid = document.getElementById('ong-pets-grid');
+    if(!ongId){
+      wrap.innerHTML = `<div class="container"><div class="empty-state"><h3>ONG não encontrada</h3></div></div>`;
+      return;
+    }
+    try{
+      const doc = await db.collection('ongs').doc(ongId).get();
+      if(!doc.exists){
+        wrap.innerHTML = `<div class="container"><div class="empty-state"><h3>Esta ONG não existe</h3></div></div>`;
+        return;
+      }
+      const ong = { id: doc.id, ...doc.data() };
+
+      wrap.innerHTML = `
+        <section class="ong-header">
+          <div class="container">
+            <img class="ong-logo" src="${ong.logo || 'https://placehold.co/110x110?text=ONG'}" alt="${ong.name}">
+            <div>
+              <h1>${ong.name}</h1>
+              <p style="opacity:.92; max-width:600px; margin-top:6px;">${ong.description || ''}</p>
+              <div class="ong-contacts">
+                <span>📍 ${ong.city}/${ong.state}</span>
+                ${ong.phone ? `<span>📞 ${ong.phone}</span>` : ''}
+                ${ong.email ? `<span>✉ ${ong.email}</span>` : ''}
+                ${ong.instagram ? `<span>📷 ${ong.instagram}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        </section>`;
+
+      const pets = await buscarPets({ ongId: ong.id, incluirAdotados: false });
+      if(pets.length === 0){
+        petsGrid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🐾</div><h3>Nenhum pet disponível no momento</h3></div>`;
+      } else {
+        petsGrid.innerHTML = pets.map(petCardHTML).join('');
+        atualizarBotoesFavorito();
+      }
+    }catch(err){
+      wrap.innerHTML = `<div class="container"><div class="empty-state"><h3>Erro ao carregar ONG</h3><p>${traduzirErroFirebase(err)}</p></div></div>`;
+    }
+  }
+
+  carregarOng();
+</script>
+</body>
+</html>

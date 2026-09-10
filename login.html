@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entrar - PetLar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header" id="site-header"></header>
+
+<div class="auth-page">
+  <div class="form-card" style="margin:0;">
+    <h2>Bem-vindo de volta 🐾</h2>
+    <p class="form-subtitle">Entre para gerenciar seus anúncios e favoritos.</p>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" name="email" class="form-control" required placeholder="seuemail@exemplo.com">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" name="password" class="form-control" required placeholder="Sua senha">
+        <span class="hint"><a href="#" id="forgot-link">Esqueci minha senha</a></span>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="login-btn">Entrar</button>
+    </form>
+
+    <p class="auth-links">Ainda não tem uma conta? <a href="cadastro.html">Cadastre-se gratuitamente</a></p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/header.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  initLayout('');
+
+  auth.onAuthStateChanged((user) => {
+    if(user) window.location.href = 'perfil.html';
+  });
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner spinner-sm"></span> Entrando...';
+    try{
+      await loginUsuario(form.email.value.trim(), form.password.value);
+      showToast('Login realizado com sucesso!', 'success');
+      setTimeout(() => window.location.href = 'perfil.html', 700);
+    }catch(err){
+      showToast(traduzirErroFirebase(err), 'error');
+      btn.disabled = false;
+      btn.textContent = 'Entrar';
+    }
+  });
+
+  document.getElementById('forgot-link').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = document.querySelector('[name="email"]').value.trim();
+    if(!email){
+      showToast('Digite seu e-mail no campo acima primeiro.', 'warning');
+      return;
+    }
+    try{
+      await recuperarSenha(email);
+      showToast('Enviamos um e-mail com instruções para redefinir sua senha.', 'success');
+    }catch(err){
+      showToast(traduzirErroFirebase(err), 'error');
+    }
+  });
+</script>
+</body>
+</html>
