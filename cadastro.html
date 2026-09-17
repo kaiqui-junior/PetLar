@@ -30,15 +30,17 @@
         <input type="password" name="password" class="form-control" required minlength="6" placeholder="Mínimo 6 caracteres">
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Cidade</label>
-          <input type="text" name="city" class="form-control" required placeholder="Sua cidade">
-        </div>
-        <div class="form-group">
-          <label>Estado</label>
-          <select name="state" class="form-control" id="state-select-cadastro" required></select>
-        </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select name="state" class="form-control" id="state-select-cadastro" required></select>
       </div>
+  <div class="form-group">
+    <label>Cidade</label>
+    <select name="city" class="form-control" id="city-select-cadastro" required disabled>
+      <option value="">Selecione o estado primeiro</option>
+    </select>
+  </div>
+</div>
       <div class="form-group">
         <label>Telefone <span class="hint" style="display:inline;">(opcional)</span></label>
         <input type="tel" name="phone" class="form-control" placeholder="(00) 00000-0000">
@@ -64,6 +66,32 @@
 
   const stateSelect = document.getElementById('state-select-cadastro');
   stateSelect.innerHTML = '<option value="">Selecione</option>' + ESTADOS_BR.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+
+  const citySelect = document.getElementById('city-select-cadastro');
+
+stateSelect.addEventListener('change', async () => {
+  const uf = stateSelect.value;
+
+  if(!uf){
+    citySelect.innerHTML = '<option value="">Selecione o estado primeiro</option>';
+    citySelect.disabled = true;
+    return;
+  }
+
+  preencherSelectComoCarregando(citySelect);
+
+  try{
+    const cidades = await buscarCidadesPorUF(uf);
+    citySelect.innerHTML = '<option value="">Selecione a cidade</option>' +
+      cidades.map(c => `<option value="${c}">${c}</option>`).join('');
+    citySelect.disabled = false;
+  }catch(err){
+    console.error(err);
+    citySelect.innerHTML = '<option value="">Erro ao carregar. Tente selecionar o estado novamente.</option>';
+    citySelect.disabled = true;
+    showToast('Não foi possível carregar as cidades. Verifique sua internet.', 'warning');
+  }
+});
 
   auth.onAuthStateChanged((user) => {
     if(user) window.location.href = 'perfil.html';

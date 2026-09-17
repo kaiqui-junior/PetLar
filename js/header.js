@@ -22,7 +22,7 @@ function renderHeaderSkeleton(activePage){
 
       <div class="header-actions">
         <form class="header-search" onsubmit="event.preventDefault(); window.location.href='pets.html?busca=' + encodeURIComponent(this.q.value);">
-          <input type="text" name="q" placeholder="Buscar por nome ou raça...">
+          <input type="text" name="q" placeholder="Buscar Pets...">
         </form>
         <div id="auth-area"></div>
         <button class="mobile-toggle" id="mobile-toggle-btn" aria-label="Menu">☰</button>
@@ -68,9 +68,9 @@ function renderAuthArea(user, userData){
 
   desktop.innerHTML = `
     <a href="publicar.html" class="btn btn-primary btn-sm"><span class="btn-text">Publicar pet</span></a>
-    <div class="user-menu">
-      <button class="user-avatar-btn" id="user-menu-btn"><img src="${foto}" alt="${nome}"></button>
-      <div class="user-dropdown" id="user-dropdown">
+    <div class="user-menu" id="user-menu">
+        <button class="user-avatar-btn" id="user-menu-btn"><img src="${foto}" alt="${nome}"></button>
+        <div class="user-dropdown" id="user-dropdown">
         <a href="perfil.html">👤 Meu perfil</a>
         <a href="meus-anuncios.html">🐶 Meus anúncios</a>
         <a href="favoritos.html">❤ Favoritos</a>
@@ -90,17 +90,14 @@ function renderAuthArea(user, userData){
   document.getElementById('user-menu-btn').addEventListener('click', () => {
     document.getElementById('user-dropdown').classList.toggle('open');
   });
-  document.addEventListener('click', (e) => {
-    const menu = document.getElementById('user-menu');
-  });
   document.getElementById('logout-btn-desktop').addEventListener('click', fazerLogout);
   document.getElementById('logout-btn-mobile').addEventListener('click', fazerLogout);
 
-  // fecha dropdown clicando fora
+  // fecha dropdown ao clicar fora do menu (botão + dropdown inteiros)
   document.addEventListener('click', function(e){
     const dropdown = document.getElementById('user-dropdown');
-    const btn = document.getElementById('user-menu-btn');
-    if(dropdown && !dropdown.contains(e.target) && e.target !== btn){
+    const userMenu = document.getElementById('user-menu');
+    if(dropdown && userMenu && !userMenu.contains(e.target)){
       dropdown.classList.remove('open');
     }
   });

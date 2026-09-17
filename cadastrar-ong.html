@@ -153,11 +153,9 @@
 
     try{
       let logoUrl = '';
-      if(LOGO_FILE){
-        const ref = storage.ref(`ongs/${USUARIO.uid}_logo_${Date.now()}`);
-        await ref.put(LOGO_FILE);
-        logoUrl = await ref.getDownloadURL();
-      }
+if(LOGO_FILE){
+  logoUrl = await uploadParaCloudinary(LOGO_FILE);
+}
 
       const ongData = {
         ownerId: USUARIO.uid,

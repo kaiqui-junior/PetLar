@@ -97,9 +97,35 @@
 
   exigirLogin(async (user) => {
     USUARIO = user;
-    DADOS = await getUserData(user.uid);
-    preencherPerfil();
-    carregarEstatisticas();
+    try {
+      DADOS = await getUserData(user.uid);
+
+      if (!DADOS) {
+        const nomePadrao = user.displayName || (user.email ? user.email.split('@')[0] : 'Usuário');
+        const dadosPadrao = {
+          name: nomePadrao,
+          email: user.email,
+          city: '',
+          state: '',
+          phone: '',
+          profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(nomePadrao)}&background=2E9E6B&color=fff`,
+          ongId: null,
+          role: 'user',
+          blocked: false,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.collection('users').doc(user.uid).set(dadosPadrao);
+        DADOS = { id: user.uid, ...dadosPadrao };
+        showToast('Finalizamos a configuração do seu perfil. Complete cidade e estado abaixo.', 'success');
+      }
+
+      preencherPerfil();
+      carregarEstatisticas();
+    } catch (err) {
+      console.error(err);
+      showToast(traduzirErroFirebase(err), 'error');
+      document.getElementById('profile-name').textContent = 'Erro ao carregar perfil';
+    }
   });
 
   function preencherPerfil(){
@@ -109,10 +135,10 @@
     document.getElementById('stat-ong').textContent = DADOS.ongId ? 'Sim' : 'Não';
 
     const form = document.getElementById('perfil-form');
-    form.name.value = DADOS.name || '';
-    form.phone.value = DADOS.phone || '';
-    form.city.value = DADOS.city || '';
-    form.state.value = DADOS.state || '';
+    form.name.value = '';
+    form.phone.value = '';
+    form.city.value = '';
+    form.state.value = '';
   }
 
   async function carregarEstatisticas(){
@@ -162,11 +188,8 @@
       };
 
       if(NOVO_AVATAR_FILE){
-        const path = `avatars/${USUARIO.uid}_${Date.now()}`;
-        const ref = storage.ref(path);
-        await ref.put(NOVO_AVATAR_FILE);
-        updateData.profileImage = await ref.getDownloadURL();
-      }
+  updateData.profileImage = await uploadParaCloudinary(NOVO_AVATAR_FILE);
+}
 
       await db.collection('users').doc(USUARIO.uid).update(updateData);
       DADOS = { ...DADOS, ...updateData };

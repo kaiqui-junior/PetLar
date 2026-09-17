@@ -315,13 +315,10 @@
     try{
       // 1. Upload das novas imagens para o Storage
       const novasUrls = [];
-      for(const item of ARQUIVOS_SELECIONADOS){
-        const path = `pets/${USUARIO_LOGADO.uid}/${Date.now()}_${item.file.name}`;
-        const ref = storage.ref(path);
-        await ref.put(item.file);
-        const url = await ref.getDownloadURL();
-        novasUrls.push(url);
-      }
+for(const item of ARQUIVOS_SELECIONADOS){
+  const url = await uploadParaCloudinary(item.file);
+  novasUrls.push(url);
+}
 
       const todasImagens = [...IMAGENS_EXISTENTES, ...novasUrls];
       const mainImage = todasImagens[INDICE_IMAGEM_PRINCIPAL] || todasImagens[0];

@@ -146,3 +146,34 @@ function petCardHTML(pet){
 }
 
 document.addEventListener('DOMContentLoaded', injectConfirmModal);
+
+// ---------- Busca de cidades por estado (API pública do IBGE) ----------
+async function buscarCidadesPorUF(uf){
+  const resp = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+  if(!resp.ok) throw new Error('Falha ao buscar cidades do IBGE');
+  const data = await resp.json();
+  return data.map(m => m.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
+function preencherSelectComoCarregando(selectEl, texto = 'Carregando cidades...'){
+  selectEl.innerHTML = `<option value="">${texto}</option>`;
+  selectEl.disabled = true;
+}
+
+// ---------- Upload de imagens via Cloudinary (gratuito, sem necessidade de cartão) ----------
+const CLOUDINARY_CLOUD_NAME = "px9ptpxc";
+const CLOUDINARY_UPLOAD_PRESET = "petlar";
+async function uploadParaCloudinary(file){
+  const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+  const resp = await fetch(url, { method: 'POST', body: formData });
+  if(!resp.ok){
+    const errData = await resp.json().catch(() => ({}));
+    throw new Error(errData.error?.message || 'Falha ao enviar imagem. Verifique sua conexão.');
+  }
+  const data = await resp.json();
+  return data.secure_url;
+}
