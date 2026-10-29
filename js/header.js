@@ -1,17 +1,10 @@
-/* ==========================================================================
-   header.js - Header, menu mobile e footer, comuns a todas as páginas.
-   Cada página só precisa ter:
-     <div id="site-header"></div>  e  <div id="site-footer"></div>
-   e incluir este script.
-   ========================================================================== */
-
 function renderHeaderSkeleton(activePage){
   const header = document.getElementById('site-header');
   if(!header) return;
 
   header.innerHTML = `
     <div class="container">
-      <a href="index.html" class="logo">🐾 Pet<span>Lar</span></a>
+      <a href="index.html" class="logo">Pet<span>Lar</span></a>
 
       <nav class="nav-desktop">
         <a href="index.html" data-page="index">Início</a>
@@ -37,7 +30,6 @@ function renderHeaderSkeleton(activePage){
     </div>
   `;
 
-  // marca link ativo
   header.querySelectorAll(`[data-page="${activePage}"]`).forEach(el => el.classList.add('active'));
 
   document.getElementById('mobile-toggle-btn').addEventListener('click', () => {
@@ -71,19 +63,19 @@ function renderAuthArea(user, userData){
     <div class="user-menu" id="user-menu">
         <button class="user-avatar-btn" id="user-menu-btn"><img src="${foto}" alt="${nome}"></button>
         <div class="user-dropdown" id="user-dropdown">
-        <a href="perfil.html">👤 Meu perfil</a>
-        <a href="meus-anuncios.html">🐶 Meus anúncios</a>
-        <a href="favoritos.html">❤ Favoritos</a>
-        ${isAdmin ? '<a href="admin.html">⚙ Painel admin</a>' : ''}
-        <button id="logout-btn-desktop">🚪 Sair</button>
+        <a href="perfil.html">Meu perfil</a>
+        <a href="meus-anuncios.html">Meus anúncios</a>
+        <a href="favoritos.html">Favoritos</a>
+        ${isAdmin ? '<a href="admin.html">Painel admin</a>' : ''}
+        <button id="logout-btn-desktop">Sair</button>
       </div>
     </div>
   `;
   mobile.innerHTML = `
-    <a href="perfil.html">👤 Meu perfil</a>
-    <a href="meus-anuncios.html">🐶 Meus anúncios</a>
-    <a href="favoritos.html">❤ Favoritos</a>
-    ${isAdmin ? '<a href="admin.html">⚙ Painel admin</a>' : ''}
+    <a href="perfil.html">Meu perfil</a>
+    <a href="meus-anuncios.html">Meus anúncios</a>
+    <a href="favoritos.html">Favoritos</a>
+    ${isAdmin ? '<a href="admin.html">Painel admin</a>' : ''}
     <button id="logout-btn-mobile" class="btn btn-danger btn-block">Sair</button>
   `;
 
@@ -93,7 +85,6 @@ function renderAuthArea(user, userData){
   document.getElementById('logout-btn-desktop').addEventListener('click', fazerLogout);
   document.getElementById('logout-btn-mobile').addEventListener('click', fazerLogout);
 
-  // fecha dropdown ao clicar fora do menu (botão + dropdown inteiros)
   document.addEventListener('click', function(e){
     const dropdown = document.getElementById('user-dropdown');
     const userMenu = document.getElementById('user-menu');
@@ -110,7 +101,7 @@ function renderFooterHTML(){
     <div class="container">
       <div class="footer-grid">
         <div>
-          <h4>🐾 PetLar</h4>
+          <h4>PetLar</h4>
           <p>Plataforma criada para conectar animais que precisam de um lar a pessoas dispostas a adotar com responsabilidade e amor. Projeto acadêmico (TCC) sem fins comerciais.</p>
         </div>
         <div>
@@ -137,7 +128,6 @@ function renderFooterHTML(){
   `;
 }
 
-// Inicializa header/footer e observa estado de autenticação
 function initLayout(activePage){
   renderHeaderSkeleton(activePage);
   renderFooterHTML();

@@ -37,7 +37,7 @@
       <div class="form-group">
         <label>Foto de perfil</label>
         <div class="image-upload-box" id="avatar-upload-box">
-          📷 Clique para trocar sua foto de perfil
+          Clique para trocar sua foto de perfil
           <input type="file" id="avatar-input" accept="image/*" style="display:none;">
         </div>
       </div>
@@ -131,7 +131,7 @@
   function preencherPerfil(){
     document.getElementById('profile-avatar').src = DADOS.profileImage;
     document.getElementById('profile-name').textContent = DADOS.name;
-    document.getElementById('profile-location').textContent = `📍 ${DADOS.city || '-'}/${DADOS.state || '-'} • ${DADOS.email}`;
+    document.getElementById('profile-location').textContent = `${DADOS.city || '-'}/${DADOS.state || '-'} • ${DADOS.email}`;
     document.getElementById('stat-ong').textContent = DADOS.ongId ? 'Sim' : 'Não';
 
     const form = document.getElementById('perfil-form');
@@ -149,7 +149,6 @@
     document.getElementById('stat-favs').textContent = favSnap.size;
   }
 
-  // Tabs
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -159,7 +158,6 @@
     });
   });
 
-  // Avatar upload
   const avatarBox = document.getElementById('avatar-upload-box');
   const avatarInput = document.getElementById('avatar-input');
   avatarBox.addEventListener('click', () => avatarInput.click());
@@ -171,7 +169,6 @@
     showToast('Foto selecionada. Clique em "Salvar alterações" para confirmar.', 'success');
   });
 
-  // Salvar perfil
   document.getElementById('perfil-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
@@ -188,8 +185,8 @@
       };
 
       if(NOVO_AVATAR_FILE){
-  updateData.profileImage = await uploadParaCloudinary(NOVO_AVATAR_FILE);
-}
+        updateData.profileImage = await uploadParaCloudinary(NOVO_AVATAR_FILE);
+      }
 
       await db.collection('users').doc(USUARIO.uid).update(updateData);
       DADOS = { ...DADOS, ...updateData };

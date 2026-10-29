@@ -21,11 +21,9 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.blocked != true;
     }
 
-    // ---------------- USERS ----------------
     match /users/{userId} {
-      allow read: if true; // dados públicos do responsável pelo anúncio (nome/foto)
+      allow read: if true;
       allow create: if ehDono(userId);
-      // usuário comum não pode alterar 'role' nem 'blocked'; admin pode alterar qualquer coisa
       allow update: if ehAdmin() ||
         (ehDono(userId) &&
           request.resource.data.role == resource.data.role &&
@@ -33,7 +31,6 @@ service cloud.firestore {
       allow delete: if ehAdmin();
     }
 
-    // ---------------- PETS ----------------
     match /pets/{petId} {
       allow read: if true;
       allow create: if estaLogado() && naoEstaBloqueado() &&
@@ -44,19 +41,17 @@ service cloud.firestore {
         (estaLogado() && resource.data.ownerId == request.auth.uid);
     }
 
-    // ---------------- ONGS ----------------
     match /ongs/{ongId} {
       allow read: if true;
       allow create: if estaLogado() && naoEstaBloqueado() &&
         request.resource.data.ownerId == request.auth.uid;
       allow update: if ehAdmin() ||
         (estaLogado() && resource.data.ownerId == request.auth.uid &&
-          request.resource.data.status == resource.data.status); // dono não altera status de aprovação
+          request.resource.data.status == resource.data.status);
       allow delete: if ehAdmin() ||
         (estaLogado() && resource.data.ownerId == request.auth.uid);
     }
 
-    // ---------------- FAVORITES ----------------
     match /favorites/{favId} {
       allow read: if estaLogado() && resource.data.userId == request.auth.uid;
       allow create: if estaLogado() && request.resource.data.userId == request.auth.uid;
@@ -64,7 +59,6 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // ---------------- REPORTS (denúncias) ----------------
     match /reports/{reportId} {
       allow read: if ehAdmin();
       allow create: if estaLogado() && request.resource.data.reportedBy == request.auth.uid;

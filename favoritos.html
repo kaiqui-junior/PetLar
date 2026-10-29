@@ -12,7 +12,7 @@
 <header class="site-header" id="site-header"></header>
 
 <div class="container" style="padding-top:32px; padding-bottom:60px;">
-  <h1 class="section-title">Meus favoritos ❤</h1>
+  <h1 class="section-title">Meus favoritos</h1>
   <p class="section-subtitle">Pets que você salvou para ver depois.</p>
 
   <div class="pets-grid" id="fav-grid">
@@ -46,7 +46,7 @@
       const petIds = favSnap.docs.map(d => d.data().petId);
 
       if(petIds.length === 0){
-        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">❤</div><h3>Você ainda não favoritou nenhum pet</h3><p>Explore os pets disponíveis e favorite os que mais gostar.</p><a href="pets.html" class="btn btn-primary" style="margin-top:16px;">Ver pets disponíveis</a></div>`;
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><h3>Você ainda não favoritou nenhum pet</h3><p>Explore os pets disponíveis e favorite os que mais gostar.</p><a href="pets.html" class="btn btn-primary" style="margin-top:16px;">Ver pets disponíveis</a></div>`;
         return;
       }
 
@@ -65,7 +65,6 @@
       await carregarFavoritosUsuario(uid);
       atualizarBotoesFavorito();
 
-      // Atualiza a lista automaticamente quando um item é desfavoritado
       grid.addEventListener('click', (e) => {
         const btn = e.target.closest('.js-fav-btn');
         if(btn) setTimeout(() => carregarFavoritos(uid), 500);

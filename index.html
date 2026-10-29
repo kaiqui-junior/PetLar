@@ -13,15 +13,14 @@
 
 <header class="site-header" id="site-header"></header>
 
-<!-- HERO -->
 <section class="hero">
   <div class="container">
     <div class="hero-content">
       <h1>Todo pet merece um lar cheio de amor.</h1>
       <p>O PetLar conecta animais que precisam de uma família a pessoas prontas para adotar. Sem intermediários, sem venda — apenas conexões reais.</p>
       <div class="hero-actions">
-        <a href="pets.html" class="btn btn-secondary">🐾 Encontrar um pet</a>
-        <a href="publicar.html" class="btn btn-outline-white">➕ Colocar um pet para adoção</a>
+        <a href="pets.html" class="btn btn-secondary">Encontrar um pet</a>
+        <a href="publicar.html" class="btn btn-outline-white">Colocar um pet para adoção</a>
       </div>
       <form class="hero-search" onsubmit="event.preventDefault(); window.location.href='pets.html?busca=' + encodeURIComponent(this.q.value);">
         <input type="text" name="q" placeholder="Buscar por espécie, raça ou cidade...">
@@ -34,7 +33,6 @@
   </div>
 </section>
 
-<!-- PETS RECENTES -->
 <section class="section">
   <div class="container">
     <h2 class="section-title">Pets esperando por um lar</h2>
@@ -48,7 +46,6 @@
   </div>
 </section>
 
-<!-- COMO FUNCIONA -->
 <section class="section bg-alt">
   <div class="container">
     <h2 class="section-title text-center">Como funciona?</h2>
@@ -78,7 +75,6 @@
   </div>
 </section>
 
-<!-- ONGS PARCEIRAS -->
 <section class="section">
   <div class="container">
     <h2 class="section-title">ONGs parceiras</h2>
@@ -91,7 +87,6 @@
 
 <footer class="site-footer" id="site-footer"></footer>
 
-<!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
@@ -111,7 +106,7 @@
       const pets = await buscarPets({ incluirAdotados: false });
       const recentes = pets.slice(0, 8);
       if(recentes.length === 0){
-        grid.innerHTML = `<div class="empty-state"><div class="icon">🐕</div><h3>Nenhum pet cadastrado ainda</h3><p>Seja o primeiro a publicar um pet para adoção!</p></div>`;
+        grid.innerHTML = `<div class="empty-state"><h3>Nenhum pet cadastrado ainda</h3><p>Seja o primeiro a publicar um pet para adoção!</p></div>`;
         return;
       }
       grid.innerHTML = recentes.map(petCardHTML).join('');
@@ -128,7 +123,7 @@
       const snap = await db.collection('ongs').where('status', '==', 'aprovada').limit(6).get();
       const ongs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       if(ongs.length === 0){
-        grid.innerHTML = `<div class="empty-state"><div class="icon">🏠</div><h3>Nenhuma ONG parceira ainda</h3><p>Cadastre a sua ONG e apareça aqui.</p></div>`;
+        grid.innerHTML = `<div class="empty-state"><h3>Nenhuma ONG parceira ainda</h3><p>Cadastre a sua ONG e apareça aqui.</p></div>`;
         return;
       }
       grid.innerHTML = ongs.map(o => `
@@ -136,7 +131,7 @@
           <img src="${o.logo || 'https://placehold.co/100x100?text=ONG'}" alt="${o.name}">
           <div>
             <h3>${o.name}</h3>
-            <p style="color:var(--color-text-light); font-size:0.85rem;">📍 ${o.city}/${o.state}</p>
+            <p style="color:var(--color-text-light); font-size:0.85rem;">${o.city}/${o.state}</p>
           </div>
         </a>
       `).join('');

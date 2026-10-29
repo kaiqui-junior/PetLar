@@ -12,7 +12,7 @@
 <header class="site-header" id="site-header"></header>
 
 <div class="container" style="padding-top:32px; padding-bottom:60px;">
-  <h1 class="section-title">Painel Administrativo ⚙</h1>
+  <h1 class="section-title">Painel Administrativo</h1>
   <p class="section-subtitle">Visão geral da plataforma e gerenciamento de conteúdo.</p>
 
   <div class="stat-grid">
@@ -126,7 +126,6 @@
     document.getElementById('stat-reports').textContent = reportsSnap.size;
   }
 
-  // ---------- Usuários ----------
   async function carregarUsuarios(){
     const tbody = document.getElementById('tbody-usuarios');
     const snap = await db.collection('users').get();
@@ -161,7 +160,6 @@
     carregarUsuarios();
   });
 
-  // ---------- Anúncios ----------
   async function carregarAnuncios(){
     const tbody = document.getElementById('tbody-anuncios');
     const snap = await db.collection('pets').get();
@@ -208,7 +206,6 @@
     carregarEstatisticas();
   });
 
-  // ---------- ONGs ----------
   async function carregarOngs(){
     const tbody = document.getElementById('tbody-ongs');
     const snap = await db.collection('ongs').get();
@@ -240,7 +237,6 @@
     carregarOngs();
   });
 
-  // ---------- Denúncias ----------
   async function carregarDenuncias(){
     const tbody = document.getElementById('tbody-denuncias');
     const snap = await db.collection('reports').get();

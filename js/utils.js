@@ -1,8 +1,3 @@
-/* ==========================================================================
-   utils.js - Funções auxiliares usadas em todas as páginas
-   ========================================================================== */
-
-// ---------- Toasts (mensagens de sucesso/erro/aviso) ----------
 function ensureToastContainer(){
   let c = document.getElementById('toast-container');
   if(!c){
@@ -26,7 +21,6 @@ function showToast(message, type = 'success', duration = 3500){
   }, duration);
 }
 
-// ---------- Tradução de mensagens de erro do Firebase ----------
 function traduzirErroFirebase(error){
   const code = error && error.code ? error.code : '';
   const map = {
@@ -44,7 +38,6 @@ function traduzirErroFirebase(error){
   return map[code] || (error && error.message) || 'Ocorreu um erro inesperado. Tente novamente.';
 }
 
-// ---------- Modal de confirmação genérico ----------
 function confirmarAcao(titulo, mensagem){
   return new Promise((resolve) => {
     const overlay = document.getElementById('confirm-modal');
@@ -86,7 +79,6 @@ function injectConfirmModal(){
   document.body.appendChild(div);
 }
 
-// ---------- Formatação ----------
 function formatarData(timestamp){
   if(!timestamp) return '-';
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -105,7 +97,6 @@ function debounce(fn, delay = 400){
   };
 }
 
-// ---------- Mapas de rótulos (usados em cards, filtros e detalhes) ----------
 const LABELS = {
   species: { cachorro: 'Cachorro', gato: 'Gato', outros: 'Outro' },
   sex: { macho: 'Macho', femea: 'Fêmea' },
@@ -137,7 +128,7 @@ function petCardHTML(pet){
         <span>${LABELS.age[pet.age] || pet.age}</span>
         <span>${LABELS.sex[pet.sex] || pet.sex}</span>
       </div>
-      <div class="pet-card-location">📍 ${pet.city || ''}/${pet.state || ''}</div>
+      <div class="pet-card-location">${pet.city || ''}/${pet.state || ''}</div>
     </div>
     <div class="pet-card-footer">
       <a href="pet.html?id=${pet.id}" class="btn btn-outline btn-block btn-sm">Ver detalhes</a>
@@ -147,7 +138,6 @@ function petCardHTML(pet){
 
 document.addEventListener('DOMContentLoaded', injectConfirmModal);
 
-// ---------- Busca de cidades por estado (API pública do IBGE) ----------
 async function buscarCidadesPorUF(uf){
   const resp = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
   if(!resp.ok) throw new Error('Falha ao buscar cidades do IBGE');
@@ -160,7 +150,6 @@ function preencherSelectComoCarregando(selectEl, texto = 'Carregando cidades...'
   selectEl.disabled = true;
 }
 
-// ---------- Upload de imagens via Cloudinary (gratuito, sem necessidade de cartão) ----------
 const CLOUDINARY_CLOUD_NAME = "px9ptpxc";
 const CLOUDINARY_UPLOAD_PRESET = "petlar";
 async function uploadParaCloudinary(file){

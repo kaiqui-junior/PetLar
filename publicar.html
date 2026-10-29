@@ -13,7 +13,7 @@
 
 <div class="container">
   <div class="form-card wide">
-    <h2 id="form-title">Publicar pet para adoção 🐾</h2>
+    <h2 id="form-title">Publicar pet para adoção</h2>
     <p class="form-subtitle">Preencha os dados com atenção. Anúncios completos recebem mais interesse!</p>
 
     <form id="pet-form">
@@ -131,7 +131,7 @@
       <div class="form-group">
         <label>Fotos do pet * <span class="hint" style="display:inline;">(selecione uma ou mais imagens)</span></label>
         <div class="image-upload-box" id="upload-box">
-          📷 Clique aqui ou arraste as fotos do pet
+          Clique aqui ou arraste as fotos do pet
           <input type="file" id="image-input" accept="image/*" multiple style="display:none;">
         </div>
         <div class="image-preview-grid" id="preview-grid"></div>
@@ -162,8 +162,8 @@
 
   let USUARIO_LOGADO = null;
   let USUARIO_DADOS = null;
-  let ARQUIVOS_SELECIONADOS = []; // { file, url, isMain }
-  let IMAGENS_EXISTENTES = [];    // usadas ao editar um anúncio
+  let ARQUIVOS_SELECIONADOS = [];
+  let IMAGENS_EXISTENTES = [];
   let INDICE_IMAGEM_PRINCIPAL = 0;
   const editId = getParam('id');
 
@@ -181,7 +181,7 @@
   });
 
   async function carregarPetParaEdicao(id){
-    document.getElementById('form-title').textContent = 'Editar anúncio 🐾';
+    document.getElementById('form-title').textContent = 'Editar anúncio';
     document.getElementById('submit-btn').textContent = 'Salvar alterações';
     const doc = await db.collection('pets').doc(id).get();
     if(!doc.exists){ showToast('Anúncio não encontrado.', 'error'); return; }
@@ -217,7 +217,6 @@
     renderizarPreviews();
   }
 
-  // ---------- Upload de imagens ----------
   const uploadBox = document.getElementById('upload-box');
   const imageInput = document.getElementById('image-input');
   uploadBox.addEventListener('click', () => imageInput.click());
@@ -291,7 +290,6 @@
     });
   }
 
-  // ---------- Envio do formulário ----------
   document.getElementById('pet-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
@@ -313,12 +311,11 @@
     btn.innerHTML = '<span class="spinner spinner-sm"></span> Publicando...';
 
     try{
-      // 1. Upload das novas imagens para o Storage
       const novasUrls = [];
-for(const item of ARQUIVOS_SELECIONADOS){
-  const url = await uploadParaCloudinary(item.file);
-  novasUrls.push(url);
-}
+      for(const item of ARQUIVOS_SELECIONADOS){
+        const url = await uploadParaCloudinary(item.file);
+        novasUrls.push(url);
+      }
 
       const todasImagens = [...IMAGENS_EXISTENTES, ...novasUrls];
       const mainImage = todasImagens[INDICE_IMAGEM_PRINCIPAL] || todasImagens[0];

@@ -1,8 +1,3 @@
-/* ==========================================================================
-   pets.js - Funções compartilhadas de busca de pets e favoritos
-   Usado em: index.html, pets.html, ong.html
-   ========================================================================== */
-
 let CURRENT_USER = null;
 let USER_FAVORITES = new Set();
 
@@ -32,7 +27,6 @@ function atualizarBotoesFavorito(){
   });
 }
 
-// Delegação de evento para os botões de favoritar dentro dos cards
 document.addEventListener('click', async (e) => {
   const btn = e.target.closest('.js-fav-btn');
   if(!btn) return;
@@ -69,9 +63,6 @@ document.addEventListener('click', async (e) => {
   btn.disabled = false;
 });
 
-// ---------- Busca de pets ----------
-// Busca todos os pets disponíveis (status != adotado por padrão) e filtra no cliente,
-// evitando a necessidade de índices compostos no Firestore.
 async function buscarPets({ ownerId = null, ongId = null, incluirAdotados = true } = {}){
   let query = db.collection('pets');
   if(ownerId){

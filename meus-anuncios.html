@@ -17,7 +17,7 @@
       <h1 class="section-title" style="margin-bottom:4px;">Meus anúncios</h1>
       <p class="section-subtitle" style="margin-bottom:0;">Gerencie os pets que você publicou.</p>
     </div>
-    <a href="publicar.html" class="btn btn-primary">➕ Publicar novo pet</a>
+    <a href="publicar.html" class="btn btn-primary">Publicar novo pet</a>
   </div>
 
   <div class="pets-grid" id="my-pets-grid">
@@ -60,7 +60,7 @@
           <span>${LABELS.species[pet.species] || pet.species}</span>
           <span>${LABELS.age[pet.age] || pet.age}</span>
         </div>
-        <div class="pet-card-location">📍 ${pet.city}/${pet.state}</div>
+        <div class="pet-card-location">${pet.city}/${pet.state}</div>
       </div>
       <div class="pet-card-footer" style="display:flex; flex-direction:column; gap:8px;">
         <a href="pet.html?id=${pet.id}" class="btn btn-outline btn-sm btn-block">Visualizar</a>
@@ -79,7 +79,7 @@
     try{
       const pets = await buscarPets({ ownerId: UID_ATUAL });
       if(pets.length === 0){
-        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🐾</div><h3>Você ainda não publicou nenhum pet</h3><p>Que tal ajudar um animal a encontrar um lar?</p><a href="publicar.html" class="btn btn-primary" style="margin-top:16px;">Publicar meu primeiro pet</a></div>`;
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><h3>Você ainda não publicou nenhum pet</h3><p>Que tal ajudar um animal a encontrar um lar?</p><a href="publicar.html" class="btn btn-primary" style="margin-top:16px;">Publicar meu primeiro pet</a></div>`;
         return;
       }
       grid.innerHTML = pets.map(cardMeuAnuncioHTML).join('');
@@ -97,7 +97,7 @@
       const ok = await confirmarAcao('Marcar como adotado?', 'O pet deixará de aparecer na lista de disponíveis para adoção.');
       if(!ok) return;
       await db.collection('pets').doc(petId).update({ status: 'adotado' });
-      showToast('Pet marcado como adotado. Parabéns pela adoção! 🎉', 'success');
+      showToast('Pet marcado como adotado. Parabéns pela adoção!', 'success');
       carregarMeusAnuncios();
     }
 

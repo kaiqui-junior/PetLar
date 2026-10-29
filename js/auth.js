@@ -1,8 +1,3 @@
-/* ==========================================================================
-   auth.js - Cadastro, login, logout, recuperação de senha
-   ========================================================================== */
-
-// ---------- Cadastro ----------
 async function registrarUsuario({ name, email, password, city, state, phone }){
   const cred = await auth.createUserWithEmailAndPassword(email, password);
   const uid = cred.user.uid;
@@ -24,11 +19,9 @@ async function registrarUsuario({ name, email, password, city, state, phone }){
   return cred.user;
 }
 
-// ---------- Login ----------
 async function loginUsuario(email, password){
   const cred = await auth.signInWithEmailAndPassword(email, password);
 
-  // verifica se usuário está bloqueado
   const snap = await db.collection('users').doc(cred.user.uid).get();
   if(snap.exists && snap.data().blocked){
     await auth.signOut();
@@ -37,12 +30,10 @@ async function loginUsuario(email, password){
   return cred.user;
 }
 
-// ---------- Recuperação de senha ----------
 function recuperarSenha(email){
   return auth.sendPasswordResetEmail(email);
 }
 
-// ---------- Helpers de página protegida ----------
 function exigirLogin(callback){
   auth.onAuthStateChanged((user) => {
     if(!user){

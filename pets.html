@@ -142,7 +142,7 @@
     countEl.textContent = `${RESULTADOS_FILTRADOS.length} pet(s) encontrado(s)`;
 
     if(RESULTADOS_FILTRADOS.length === 0){
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🔍</div><h3>Nenhum pet encontrado com esses filtros</h3><p>Tente ajustar ou limpar os filtros de busca.</p></div>`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><h3>Nenhum pet encontrado com esses filtros</h3><p>Tente ajustar ou limpar os filtros de busca.</p></div>`;
       document.getElementById('load-more-wrap').style.display = 'none';
       return;
     }
@@ -187,7 +187,6 @@
     renderizarResultados();
   });
 
-  // Preenche busca vinda pela URL (?busca=xxx)
   const buscaUrl = getParam('busca');
   if(buscaUrl){
     document.querySelector('[name="busca"]').value = buscaUrl;
